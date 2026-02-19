@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="doc-version" content="v0.1-mockup">
+  <meta name="doc-status" content="목업 기준 초안">
+  <meta name="last-modified" content="2026-02-19">
+  <meta name="project" content="함께봄 AI 영상 공모전 플랫폼">
+  <title>와이어프레임 - 함께봄 AI 영상 공모전 플랫폼</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="../assets/print.css">
+</head>
+<body>
+  <main>
+    <h1>🧩 와이어프레임</h1>
+    <p>핵심 사용자 플로우 5개 기준 저해상도 화면 구조와 화면 간 이동 정의</p>
+    <button id="pdf-button" class="pdf-button" type="button">📄 PDF 다운로드</button>
+    <div class="doc-meta">
+      <strong>문서 정보:</strong> v0.1-mockup | 최종 수정: 2026-02-19 | 상태: 목업 기준 초안
+    </div>
+
+    <h2>1. 범위 및 기준</h2>
+    <p>본 문서는 전체 47개 페이지 중 핵심 경험에 직접 영향을 주는 5개 플로우만 다룹니다. 라우트와 기능 ID는 정보구조도(IA) 기준으로 연결했습니다.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>플로우 ID</th>
+          <th>플로우명</th>
+          <th>대표 라우트</th>
+          <th>관련 기능 ID</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>WF-01</td>
+          <td>랜딩 → 공모전 목록 탐색</td>
+          <td><code>/</code> → <code>/contests</code> → <code>/contests/:id</code></td>
+          <td>F-001, F-011</td>
+        </tr>
+        <tr>
+          <td>WF-02</td>
+          <td>공모전 접수(제출) 플로우</td>
+          <td><code>/contests/:id</code> → <code>/login</code> → <code>/contests/:id</code></td>
+          <td>F-001, F-003, F-007</td>
+        </tr>
+        <tr>
+          <td>WF-03</td>
+          <td>심사 화면 플로우</td>
+          <td><code>/invite/:token</code> → <code>/judging</code> → <code>/judging/:contestId/:submissionId</code></td>
+          <td>F-002, F-006, F-009</td>
+        </tr>
+        <tr>
+          <td>WF-04</td>
+          <td>관리자 대시보드 운영 플로우</td>
+          <td><code>/admin/dashboard</code> → <code>/admin/users</code> → <code>/admin/analytics</code></td>
+          <td>F-007, F-008, F-010</td>
+        </tr>
+        <tr>
+          <td>WF-05</td>
+          <td>갤러리 탐색 플로우</td>
+          <td><code>/gallery</code> → <code>/creators/:id</code> → <code>/search</code></td>
+          <td>F-004, F-005, F-011</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>2. 화면 전환 맵</h2>
+    <div class="mermaid">
+graph TD
+  L[랜딩 /] --> C[공모전 목록 /contests]
+  C --> CD[공모전 상세 /contests/:id]
+  CD --> LG[로그인 /login]
+  LG --> CD
+
+  IV[심사 초대 /invite/:token] --> JD[심사 대시보드 /judging]
+  JD --> JL[공모전별 심사 /judging/:contestId]
+  JL --> JS[개별 작품 채점 /judging/:contestId/:submissionId]
+
+  AD[관리자 대시보드 /admin/dashboard] --> AU[회원 관리 /admin/users]
+  AD --> AA[분석 /admin/analytics]
+
+  G[갤러리 /gallery] --> CR[크리에이터 상세 /creators/:id]
+  G --> S[통합검색 /search]
+    </div>
+
+    <h2>3. 핵심 플로우 상세</h2>
+
+    <h3>3.1 WF-01 랜딩 → 공모전 목록 탐색</h3>
+    <p><strong>화면 레이아웃:</strong> 상단 헤더(<code>Header</code>) + 히어로 캐러셀(<code>HeroCarousel</code>) + 진행중 공모전 섹션(<code>ContestCarousel</code>) + 푸터(<code>Footer</code>).</p>
+    <p><strong>인터랙션 포인트:</strong> 히어로 CTA 버튼, 상단 GNB 공모전 링크, 공모전 카드 클릭.</p>
+    <p><strong>다음 화면:</strong> <code>/contests</code> 목록 진입 후 필터/정렬 탐색, 카드 클릭 시 <code>/contests/:id</code>.</p>
+
+    <h3>3.2 WF-02 공모전 접수(제출)</h3>
+    <p><strong>화면 레이아웃:</strong> 공모전 상세 상단 핵심 정보(Card/Badge), 일정/가이드 블록, 제출 CTA(Button), 하단 정책 영역.</p>
+    <p><strong>인터랙션 포인트:</strong> 제출 버튼 클릭 시 인증 상태 확인, 비로그인 상태는 <code>/login</code> 리다이렉트(F-007), 로그인 후 상세 복귀.</p>
+    <p><strong>다음 화면:</strong> 제출 완료 후 <code>/my/submissions</code>에서 상태 확인(F-001, F-003).</p>
+
+    <h3>3.3 WF-03 심사 화면</h3>
+    <p><strong>화면 레이아웃:</strong> 초대 수락 화면(Card) → 심사 대시보드 → 공모전별 제출작 리스트(Input 검색 포함) → 채점 상세.</p>
+    <p><strong>인터랙션 포인트:</strong> 토큰 확인, 작품 선택, 점수 입력, 코멘트 저장.</p>
+    <p><strong>다음 화면:</strong> 채점 제출 후 목록으로 복귀하여 다음 작품 심사(F-002, F-009).</p>
+
+    <h3>3.4 WF-04 관리자 대시보드</h3>
+    <p><strong>화면 레이아웃:</strong> KPI 카드 그리드(Card/Badge), 주요 액션 버튼(Button), 상세 테이블(Table).</p>
+    <p><strong>인터랙션 포인트:</strong> 회원 관리(<code>/admin/users</code>), 분석 리포트(<code>/admin/analytics</code>), 대행 요청(<code>/admin/agency-requests</code>) 진입.</p>
+    <p><strong>다음 화면:</strong> 세부 운영 화면 처리 후 대시보드 복귀(F-008, F-010).</p>
+
+    <h3>3.5 WF-05 갤러리 탐색</h3>
+    <p><strong>화면 레이아웃:</strong> 작품 카드 목록, 정렬/검색 컨트롤, 작품 메타 정보(좋아요/작성자/상태).</p>
+    <p><strong>인터랙션 포인트:</strong> 작품 카드 클릭, 좋아요 토글(<code>LikeButton</code>), 작성자 프로필 이동, 통합 검색 이동.</p>
+    <p><strong>다음 화면:</strong> <code>/creators/:id</code> 또는 <code>/search</code>에서 재탐색(F-004, F-005, F-011).</p>
+
+    <h2>4. 와이어프레임 메모</h2>
+    <ul>
+      <li>공통 레이아웃은 <code>Header</code>, <code>Footer</code>, <code>FloatingButtons</code>를 모든 공개 페이지에 재사용합니다.</li>
+      <li>상태값(접수중/심사중/결과발표)은 <code>Badge</code> 변형으로 통일해 스캔 효율을 유지합니다.</li>
+      <li>입력 구간은 <code>Label</code> + <code>Input</code>/<code>Textarea</code> 조합을 기본 패턴으로 사용합니다.</li>
+      <li>세부 인터랙션 규칙(필터 로직, 심사 점수 규칙)은 기능 명세(F-XXX) 문서로 위임합니다.</li>
+    </ul>
+  </main>
+  <script src="../assets/docs.js" defer></script>
+</body>
+</html>

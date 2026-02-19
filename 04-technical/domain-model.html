@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="doc-version" content="v0.1-mockup">
+  <meta name="doc-status" content="목업 기준 초안">
+  <meta name="last-modified" content="2026-02-19">
+  <meta name="project" content="함께봄 AI 영상 공모전 플랫폼">
+  <title>도메인 모델 정의서 - 함께봄 AI 영상 공모전 플랫폼</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="../assets/print.css">
+</head>
+<body>
+  <main>
+    <h1>🧩 도메인 모델 정의서</h1>
+    <p>공모전 도메인의 핵심 엔티티, 애그리거트 경계, 값 객체, 도메인 이벤트를 정리한다.</p>
+    <button id="pdf-button" class="pdf-button" type="button">📄 PDF 다운로드</button>
+    <div class="doc-meta">
+      <strong>문서 정보:</strong> v0.1-mockup | 최종 수정: 2026-02-19 | 상태: 목업 기준 초안
+    </div>
+
+    <h2>1. 핵심 도메인 클래스</h2>
+    <div class="mermaid">
+classDiagram
+  class User {
+    +id: string
+    +role: UserRole
+    +status: UserStatus
+    +region: string
+  }
+  class Contest {
+    +id: string
+    +hostId: string
+    +status: ContestStatus
+    +judgingType: JudgingType
+    +reviewPolicy: ReviewPolicy
+  }
+  class Submission {
+    +id: string
+    +contestId: string
+    +userId: string
+    +status: SubmissionStatus
+  }
+  class Judge {
+    +id: string
+    +contestId: string
+    +userId: string
+    +isExternal: boolean
+  }
+  class Score {
+    +id: string
+    +submissionId: string
+    +judgeId: string
+    +templateId: string
+    +total: number
+  }
+  class JudgingTemplate {
+    +id: string
+    +name: string
+  }
+  class JudgingCriterion {
+    +id: string
+    +label: string
+    +maxScore: number
+  }
+  class ContestResult {
+    +contestId: string
+    +submissionId: string
+    +rank: number
+  }
+
+  User "1" --> "0..*" Contest : hosts
+  User "1" --> "0..*" Submission : submits
+  Contest "1" --> "0..*" Submission : owns
+  Contest "1" --> "0..*" Judge : assigns
+  Judge "1" --> "0..*" Score : writes
+  Submission "1" --> "0..*" Score : receives
+  JudgingTemplate "1" --> "1..*" JudgingCriterion : has
+  Contest "1" --> "0..*" ContestResult : publishes
+    </div>
+
+    <h2>2. Aggregate Root 설계</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Aggregate</th>
+          <th>Root</th>
+          <th>내부 엔티티/의존</th>
+          <th>불변 조건</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Contest Aggregate</td>
+          <td>Contest</td>
+          <td>Submission, Judge, Score, ContestResult</td>
+          <td>Contest가 closed 이전에는 judging 시작 불가, completed 전 결과 확정 불가</td>
+        </tr>
+        <tr>
+          <td>Content Aggregate</td>
+          <td>Submission</td>
+          <td>Like, Score(참조), ActivityLog(참조)</td>
+          <td>SubmissionStatus 전이 규칙 준수, 중복 좋아요 금지</td>
+        </tr>
+        <tr>
+          <td>Judging Aggregate</td>
+          <td>Score</td>
+          <td>criteriaScores, JudgingTemplate</td>
+          <td>동일 judge-submission 조합 단일 점수만 허용</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3. Aggregate 의존 흐름</h2>
+    <div class="mermaid">
+flowchart LR
+  C[Contest Root] --> S[Submission]
+  C --> J[Judge]
+  J --> SC[Score]
+  SC --> R[ContestResult]
+  S --> R
+    </div>
+
+    <h2>4. Value Objects 정의</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>VO</th>
+          <th>원본 타입</th>
+          <th>허용 값</th>
+          <th>의미</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>ContestStatus</td><td>ContestStatus</td><td>draft/open/closed/judging/completed</td><td>공모전 수명주기</td></tr>
+        <tr><td>SubmissionStatus</td><td>SubmissionStatus</td><td>pending_review/approved/rejected/auto_rejected/judging/judged</td><td>출품작 검수+심사 상태</td></tr>
+        <tr><td>UserRole</td><td>UserRole</td><td>guest/participant/host/judge/admin</td><td>권한 모델</td></tr>
+        <tr><td>UserStatus</td><td>UserStatus</td><td>active/pending/suspended</td><td>계정 상태</td></tr>
+        <tr><td>JudgingType</td><td>Contest.judgingType</td><td>internal/external/both</td><td>심사 구성 방식</td></tr>
+        <tr><td>ReviewPolicy</td><td>Contest.reviewPolicy</td><td>manual/auto_then_manual</td><td>검수 정책</td></tr>
+      </tbody>
+    </table>
+
+    <h2>5. 도메인 이벤트</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>이벤트명</th>
+          <th>트리거</th>
+          <th>페이로드</th>
+          <th>후속 처리</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>ContestCreated</td><td>주최자 공모전 생성</td><td>contestId, hostId</td><td>운영 로그 기록, 초기 상태 draft</td></tr>
+        <tr><td>ContestOpened</td><td>status: draft → open</td><td>contestId, openedAt</td><td>목록 노출 시작</td></tr>
+        <tr><td>SubmissionCreated</td><td>참가자 제출 완료</td><td>submissionId, contestId, userId</td><td>검수 큐 등록</td></tr>
+        <tr><td>SubmissionApproved</td><td>status: pending_review → approved</td><td>submissionId, reviewerId</td><td>갤러리 공개 가능</td></tr>
+        <tr><td>SubmissionRejected</td><td>status: pending_review → rejected/auto_rejected</td><td>submissionId, reason</td><td>재제출 가이드 제공</td></tr>
+        <tr><td>JudgingStarted</td><td>contest status: closed → judging</td><td>contestId</td><td>심사화면 활성화</td></tr>
+        <tr><td>ScoreSubmitted</td><td>점수 저장</td><td>scoreId, submissionId, judgeId</td><td>진행률 갱신</td></tr>
+        <tr><td>ContestCompleted</td><td>status: judging → completed</td><td>contestId</td><td>결과 고정 및 발표</td></tr>
+      </tbody>
+    </table>
+
+    <h2>6. 이벤트 타임라인</h2>
+    <div class="mermaid">
+sequenceDiagram
+  participant Host
+  participant Contest
+  participant Submission
+  participant Judge
+  Host->>Contest: ContestCreated
+  Host->>Contest: ContestOpened
+  Submission->>Contest: SubmissionCreated
+  Contest->>Submission: SubmissionApproved
+  Host->>Contest: JudgingStarted
+  Judge->>Contest: ScoreSubmitted
+  Host->>Contest: ContestCompleted
+    </div>
+  </main>
+  <script src="../assets/docs.js" defer></script>
+</body>
+</html>

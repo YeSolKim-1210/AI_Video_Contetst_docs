@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="doc-version" content="v0.1-mockup">
+  <meta name="doc-status" content="목업 기준 초안">
+  <meta name="last-modified" content="2026-02-19">
+  <meta name="project" content="함께봄 AI 영상 공모전 플랫폼">
+  <title>상태값 정의 문서 - 함께봄 AI 영상 공모전 플랫폼</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="../assets/print.css">
+</head>
+<body>
+  <main>
+    <h1>🔖 상태값 정의 문서</h1>
+    <p><code>lib/types/index.ts</code>의 enum/union 타입과 <code>config/constants.ts</code> 라벨을 기준으로 상태 체계를 정의한다.</p>
+    <button id="pdf-button" class="pdf-button" type="button">📄 PDF 다운로드</button>
+    <div class="doc-meta">
+      <strong>문서 정보:</strong> v0.1-mockup | 최종 수정: 2026-02-19 | 상태: 목업 기준 초안
+    </div>
+
+    <h2>1. 상태/타입 분류 목록</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>타입</th>
+          <th>값 개수</th>
+          <th>소스</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>ST-001</td><td>UserRole</td><td>5</td><td>types</td></tr>
+        <tr><td>ST-002</td><td>UserStatus</td><td>3</td><td>types</td></tr>
+        <tr><td>ST-003</td><td>ContestStatus</td><td>5</td><td>types</td></tr>
+        <tr><td>ST-004</td><td>SubmissionStatus</td><td>6</td><td>types + REVIEW_TABS</td></tr>
+        <tr><td>ST-005</td><td>InquiryType</td><td>3</td><td>types</td></tr>
+        <tr><td>ST-006</td><td>InquiryStatus</td><td>3</td><td>types</td></tr>
+        <tr><td>ST-007</td><td>ArticleType</td><td>3</td><td>types + ARTICLE_TYPES</td></tr>
+        <tr><td>ST-008</td><td>FaqCategory</td><td>4</td><td>types + FAQ_CATEGORIES</td></tr>
+        <tr><td>ST-009</td><td>AgencyRequestStatus</td><td>4</td><td>types</td></tr>
+        <tr><td>ST-010</td><td>JudgingType</td><td>3</td><td>Contest union + JUDGING_TYPES</td></tr>
+        <tr><td>ST-011</td><td>ReviewPolicy</td><td>2</td><td>Contest union</td></tr>
+      </tbody>
+    </table>
+
+    <h2>2. 상세 정의</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>타입(ID)</th>
+          <th>value</th>
+          <th>한글 라벨</th>
+          <th>설명</th>
+          <th>허용 전이</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>ST-001 UserRole</td><td>guest</td><td>비로그인</td><td>인증 전 탐색 사용자</td><td>guest→participant/host/judge/admin</td></tr>
+        <tr><td>ST-001 UserRole</td><td>participant</td><td>참가자</td><td>출품과 좋아요 수행</td><td>participant→host/judge/admin</td></tr>
+        <tr><td>ST-001 UserRole</td><td>host</td><td>주최자</td><td>공모전 운영</td><td>host→admin</td></tr>
+        <tr><td>ST-001 UserRole</td><td>judge</td><td>심사위원</td><td>채점/심사 수행</td><td>judge→admin</td></tr>
+        <tr><td>ST-001 UserRole</td><td>admin</td><td>관리자</td><td>전체 운영 권한</td><td>기본 고정</td></tr>
+
+        <tr><td>ST-002 UserStatus</td><td>active</td><td>활성</td><td>정상 이용 가능</td><td>active→suspended</td></tr>
+        <tr><td>ST-002 UserStatus</td><td>pending</td><td>승인대기</td><td>가입/검증 대기</td><td>pending→active/suspended</td></tr>
+        <tr><td>ST-002 UserStatus</td><td>suspended</td><td>정지</td><td>정책 위반 정지</td><td>suspended→active</td></tr>
+
+        <tr><td>ST-003 ContestStatus</td><td>draft</td><td>작성중</td><td>공개 전 상태</td><td>draft→open</td></tr>
+        <tr><td>ST-003 ContestStatus</td><td>open</td><td>접수중</td><td>출품 접수 가능</td><td>open→closed</td></tr>
+        <tr><td>ST-003 ContestStatus</td><td>closed</td><td>접수마감</td><td>접수 종료</td><td>closed→judging</td></tr>
+        <tr><td>ST-003 ContestStatus</td><td>judging</td><td>심사중</td><td>채점 진행</td><td>judging→completed</td></tr>
+        <tr><td>ST-003 ContestStatus</td><td>completed</td><td>완료</td><td>결과 발표 완료</td><td>종료(역전이 없음)</td></tr>
+
+        <tr><td>ST-004 SubmissionStatus</td><td>pending_review</td><td>검수대기</td><td>초기 제출 상태</td><td>pending_review→approved/rejected/auto_rejected</td></tr>
+        <tr><td>ST-004 SubmissionStatus</td><td>approved</td><td>검수승인</td><td>심사 대상 편입</td><td>approved→judging</td></tr>
+        <tr><td>ST-004 SubmissionStatus</td><td>rejected</td><td>반려</td><td>수동 반려</td><td>종료 또는 재제출 신규건 생성</td></tr>
+        <tr><td>ST-004 SubmissionStatus</td><td>auto_rejected</td><td>자동반려</td><td>자동 규칙 반려</td><td>auto_rejected→pending_review(재검토)</td></tr>
+        <tr><td>ST-004 SubmissionStatus</td><td>judging</td><td>심사중</td><td>채점 진행</td><td>judging→judged</td></tr>
+        <tr><td>ST-004 SubmissionStatus</td><td>judged</td><td>심사완료</td><td>채점 종료</td><td>종료(역전이 없음)</td></tr>
+
+        <tr><td>ST-005 InquiryType</td><td>general</td><td>일반</td><td>일반 문의</td><td>고정값(전이 없음)</td></tr>
+        <tr><td>ST-005 InquiryType</td><td>support</td><td>지원</td><td>기술/운영 지원</td><td>고정값(전이 없음)</td></tr>
+        <tr><td>ST-005 InquiryType</td><td>agency</td><td>대행의뢰</td><td>브랜드 대행 관련</td><td>고정값(전이 없음)</td></tr>
+
+        <tr><td>ST-006 InquiryStatus</td><td>pending</td><td>접수</td><td>처리 대기</td><td>pending→in_progress</td></tr>
+        <tr><td>ST-006 InquiryStatus</td><td>in_progress</td><td>처리중</td><td>담당자 작업중</td><td>in_progress→resolved</td></tr>
+        <tr><td>ST-006 InquiryStatus</td><td>resolved</td><td>해결</td><td>처리 완료</td><td>종료(재오픈 정책 별도)</td></tr>
+
+        <tr><td>ST-007 ArticleType</td><td>trend_report</td><td>AI 도구 트렌드</td><td>트렌드 아티클</td><td>고정값(전이 없음)</td></tr>
+        <tr><td>ST-007 ArticleType</td><td>announcement</td><td>공지사항</td><td>서비스/운영 공지</td><td>고정값(전이 없음)</td></tr>
+        <tr><td>ST-007 ArticleType</td><td>press_release</td><td>보도자료</td><td>대외 배포 기사</td><td>고정값(전이 없음)</td></tr>
+
+        <tr><td>ST-008 FaqCategory</td><td>participant</td><td>참가자</td><td>참가자 FAQ</td><td>고정값(전이 없음)</td></tr>
+        <tr><td>ST-008 FaqCategory</td><td>host</td><td>주최자</td><td>주최자 FAQ</td><td>고정값(전이 없음)</td></tr>
+        <tr><td>ST-008 FaqCategory</td><td>judge</td><td>심사위원</td><td>심사 FAQ</td><td>고정값(전이 없음)</td></tr>
+        <tr><td>ST-008 FaqCategory</td><td>general</td><td>일반</td><td>공통 FAQ</td><td>고정값(전이 없음)</td></tr>
+
+        <tr><td>ST-009 AgencyRequestStatus</td><td>new</td><td>신규</td><td>접수 직후</td><td>new→reviewing</td></tr>
+        <tr><td>ST-009 AgencyRequestStatus</td><td>reviewing</td><td>검토중</td><td>요건 확인 단계</td><td>reviewing→quoted/closed</td></tr>
+        <tr><td>ST-009 AgencyRequestStatus</td><td>quoted</td><td>견적발송</td><td>견적 제안 완료</td><td>quoted→closed</td></tr>
+        <tr><td>ST-009 AgencyRequestStatus</td><td>closed</td><td>종료</td><td>의뢰 종료</td><td>종료(역전이 없음)</td></tr>
+
+        <tr><td>ST-010 JudgingType</td><td>internal</td><td>내부 심사</td><td>주최측 팀원 심사</td><td>Contest 생성 시 고정</td></tr>
+        <tr><td>ST-010 JudgingType</td><td>external</td><td>외부 심사</td><td>이메일 초대 심사</td><td>Contest 생성 시 고정</td></tr>
+        <tr><td>ST-010 JudgingType</td><td>both</td><td>내부+외부 병행</td><td>혼합 심사</td><td>Contest 생성 시 고정</td></tr>
+
+        <tr><td>ST-011 ReviewPolicy</td><td>manual</td><td>수동 검수</td><td>운영자 직접 검수</td><td>Contest 생성 시 고정</td></tr>
+        <tr><td>ST-011 ReviewPolicy</td><td>auto_then_manual</td><td>자동 후 수동</td><td>자동 규칙 후 재검수</td><td>Contest 생성 시 고정</td></tr>
+      </tbody>
+    </table>
+
+    <h2>3. 상태 전이 규칙 (ContestStatus)</h2>
+    <div class="mermaid">
+stateDiagram-v2
+  [*] --> draft
+  draft --> open
+  open --> closed
+  closed --> judging
+  judging --> completed
+  completed --> [*]
+    </div>
+
+    <h2>4. 상태 전이 규칙 (SubmissionStatus)</h2>
+    <div class="mermaid">
+stateDiagram-v2
+  [*] --> pending_review
+  pending_review --> approved
+  pending_review --> rejected
+  pending_review --> auto_rejected
+  auto_rejected --> pending_review
+  approved --> judging
+  judging --> judged
+  rejected --> [*]
+  judged --> [*]
+    </div>
+  </main>
+  <script src="../assets/docs.js" defer></script>
+</body>
+</html>
